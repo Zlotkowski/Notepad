@@ -9,6 +9,6 @@ Application functionality:
 - Edit a note
 - Delete a note
 - Sort notes
-- Search notes
+- Search notes --> in progress
 
 Currently refactor on PHP 8
