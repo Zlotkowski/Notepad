@@ -8,5 +8,7 @@ Application functionality:
 - View note details
 - Edit a note
 - Delete a note
+- Sort notes
+- Search notes
 
 Currently refactor on PHP 8

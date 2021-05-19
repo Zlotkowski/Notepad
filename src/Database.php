@@ -6,7 +6,7 @@ namespace App;
 
 use App\Exception\ConfigurationException;
 use App\Exception\StorageException;
-use NotFoundException;
+use App\Exception\NotFoundException;
 use PDO;
 use PDOException;
 use Throwable;
@@ -15,7 +15,7 @@ class Database
 {
     private PDO $conn;
 
-    public function  __construct(array $config)
+    public function __construct(array $config)
     {
         try {
             $this->validateConfig($config);
@@ -32,29 +32,61 @@ class Database
             $result = $this->conn->query($query);
             $note = $result->fetch(PDO::FETCH_ASSOC);
         } catch (Throwable $e) {
-            throw new StorageException('Nie udało sie pobrać notatki', 400, $e);
+            throw new StorageException('Nie udało się pobrać notatki', 400, $e);
         }
 
         if (!$note) {
-            throw new NotFoundException("Notatka o id $id nie istnieje");
-            exit('Brak takiej notatki');
+            throw new NotFoundException("Notatka o id: $id nie istnieje");
         }
 
         return $note;
     }
 
-    public function getNotes(): array
-    {
+    public function getNotes(
+        int $pageNumber,
+        int $pageSize,
+        string $sortBy,
+        string $sortOrder
+    ): array {
         try {
-            $query = "SELECT id, title, description, created FROM notes";
+            $limit = $pageSize;
+            $offset = ($pageNumber - 1) * $pageSize;
+
+            if (!in_array($sortBy, ['created', 'title'])) {
+                $sortBy = 'title';
+            }
+
+            if (!in_array($sortOrder, ['asc', 'desc'])) {
+                $sortOrder = 'desc';
+            }
+
+            $query = "
+        SELECT id, title, created 
+        FROM notes
+        ORDER BY $sortBy $sortOrder
+        LIMIT $offset, $limit
+      ";
 
             $result = $this->conn->query($query);
-            // foreach ($result as $row) {
-            //     $notes[] = $row;
-            // }
             return $result->fetchAll(PDO::FETCH_ASSOC);
         } catch (Throwable $e) {
-            throw new StorageException('Nie udało sie pobrać danych o notatkach', 400, $e);
+            throw new StorageException('Nie udało się pobrać danych o notatkach', 400, $e);
+        }
+    }
+
+    public function getCount(): int
+    {
+        try {
+            $query = "SELECT count(*) AS cn FROM notes";
+            $result = $this->conn->query($query);
+            $result = $result->fetch(PDO::FETCH_ASSOC);
+            if ($result === false) {
+                throw new StorageException('Błąd przy próbie pobrania ilości notatek', 400);
+            }
+
+            return (int) $result['cn'];
+        } catch (Throwable $e) {
+            throw new StorageException('Nie udało się pobrać informacji o liczbie notatek', 400, $e);
         }
     }
 
@@ -66,9 +98,9 @@ class Database
             $created = $this->conn->quote(date('Y-m-d H:i:s'));
 
             $query = "
-            INSERT INTO notes(title, description, created)
-            VALUES($title, $description, $created)
-            ";
+        INSERT INTO notes(title, description, created)
+        VALUES($title, $description, $created)
+      ";
 
             $this->conn->exec($query);
         } catch (Throwable $e) {
@@ -82,11 +114,11 @@ class Database
             $title = $this->conn->quote($data['title']);
             $description = $this->conn->quote($data['description']);
 
-            $query = "UPDATE notes 
-            SET title = $title, 
-            description = $description 
-            WHERE id = $id
-            ";
+            $query = "
+        UPDATE notes
+        SET title = $title, description = $description
+        WHERE id = $id
+      ";
 
             $this->conn->exec($query);
         } catch (Throwable $e) {
@@ -125,7 +157,7 @@ class Database
             || empty($config['user'])
             || empty($config['password'])
         ) {
-            throw new ConfigurationException(('Storage configuration eror'));
+            throw new ConfigurationException('Storage configuration error');
         }
     }
 }
