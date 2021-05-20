@@ -108,7 +108,7 @@ form input[type="button"] {
 
 form input[type="submit"]:hover,
 form input[type="button"]:hover {
-  background: #4691a4;
+  background: #a85c5c;
   box-shadow: none;
   -moz-box-shadow: none;
   -webkit-box-shadow: none;
