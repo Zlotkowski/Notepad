@@ -10,5 +10,3 @@ Application functionality:
 - Delete a note
 - Sort notes
 - Search notes
-
-Currently refactor on PHP 8
